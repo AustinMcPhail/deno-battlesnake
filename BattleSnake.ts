@@ -195,13 +195,6 @@ function destinationIsContested(
 ): boolean {
   // TODO: Add a check for the probability that a snake will move to this position
   const simulatedHeadPosition = simulatePosition(snake, move);
-  const foodInPosition = board.food.find((p) =>
-    p.x === simulatedHeadPosition.x && p.y === simulatedHeadPosition.y
-  );
-
-  if (!foodInPosition) {
-    return false;
-  }
 
   const others = board.snakes.filter((s) => s.id !== snake.id);
 
@@ -213,9 +206,8 @@ function destinationIsContested(
   );
 
   for (const head of otherHeadPositions) {
-    // console.log("distance", distanceTo(head, foodInPosition));
-    if (distanceTo(head, foodInPosition) === 1) {
-      //! If an opponents snake's head is one away as well, the food is contested
+    if (distanceTo(head, simulatedHeadPosition) === 1) {
+      //! If an opponents snake's head is one away from this pos as well, the position is contested
       return true;
     }
   }
