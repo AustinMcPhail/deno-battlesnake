@@ -62,7 +62,7 @@ export function getSafeMovements(snake: Snake, board: Board): Move[] {
   return moves;
 }
 
-function willCollideWithSelf(snake: Snake, move: Move): boolean {
+function simulatePosition(snake: Snake, move: Move): Position {
   let simulatedHeadPosition: Position;
 
   switch (move) {
@@ -79,24 +79,87 @@ function willCollideWithSelf(snake: Snake, move: Move): boolean {
       simulatedHeadPosition = { x: snake.head.x + 1, y: snake.head.y };
       break;
   }
+  return simulatedHeadPosition;
+}
+
+function willCollideWithSelf(snake: Snake, move: Move): boolean {
+  const simulatedHeadPosition = simulatePosition(snake, move);
 
   const foundCollision = snake.body.find((p) => {
     return p.x === simulatedHeadPosition.x && p.y === simulatedHeadPosition.y;
   });
 
-  console.log("move", move);
-  console.log("head", snake.head);
-  console.log("simulated", simulatedHeadPosition);
-  console.log("body", snake.body);
   if (foundCollision) {
-    console.log("will collide");
-  } else {
-    console.log("won't collide");
+    return true;
   }
-  console.log("\n");
+
+  return false;
+}
+
+function willCollideWithOthers(
+  snake: Snake,
+  board: Board,
+  move: Move,
+): boolean {
+  // TODO: Add a check for the probability that a snake will move to this position
+  const simulatedHeadPosition = simulatePosition(snake, move);
+
+  const others = board.snakes.filter((s) => s.id !== snake.id);
+
+  const otherPositions = others.map((s) => [s.head, ...s.body]).reduce(
+    (prev, curr) => {
+      return [...prev, ...curr];
+    },
+    [],
+  );
+
+  const foundCollision = otherPositions.find((p) => {
+    return p.x === simulatedHeadPosition.x && p.y === simulatedHeadPosition.y;
+  });
 
   if (foundCollision) {
     return true;
+  }
+
+  return false;
+}
+
+function distanceTo(pos1: Position, pos2: Position): number {
+  const x2 = Math.pow((pos2.x - pos1.x), 2);
+  const y2 = Math.pow((pos2.x - pos1.x), 2);
+  return Math.sqrt(x2 + y2);
+}
+
+function destinationIsContested(
+  snake: Snake,
+  board: Board,
+  move: Move,
+): boolean {
+  // TODO: Add a check for the probability that a snake will move to this position
+  const simulatedHeadPosition = simulatePosition(snake, move);
+  const foodInPosition = board.food.find((p) =>
+    p.x === simulatedHeadPosition.x && p.y === simulatedHeadPosition.y
+  );
+
+  if (!foodInPosition) {
+    return false;
+  }
+
+  const others = board.snakes.filter((s) => s.id !== snake.id);
+
+  const otherHeadPositions = others.map((s) => [s.head]).reduce(
+    (prev, curr) => {
+      return [...prev, ...curr];
+    },
+    [],
+  );
+
+  for (const head of otherHeadPositions) {
+    console.log("distance", distanceTo(head, foodInPosition));
+    if (distanceTo(head, foodInPosition) === 1) {
+      //! If an opponents snake's head is one away as well, the food is contested
+      return true;
+    }
   }
 
   return false;
@@ -109,6 +172,9 @@ function canMoveUp(snake: Snake, board: Board): boolean {
   if (willCollideWithSelf(snake, Move.Up)) {
     return false;
   }
+  if (willCollideWithOthers(snake, board, Move.Up)) {
+    return false;
+  }
   return true;
 }
 
@@ -117,6 +183,9 @@ function canMoveDown(snake: Snake, board: Board): boolean {
     return false;
   }
   if (willCollideWithSelf(snake, Move.Down)) {
+    return false;
+  }
+  if (willCollideWithOthers(snake, board, Move.Down)) {
     return false;
   }
   return true;
@@ -129,6 +198,9 @@ function canMoveLeft(snake: Snake, board: Board): boolean {
   if (willCollideWithSelf(snake, Move.Left)) {
     return false;
   }
+  if (willCollideWithOthers(snake, board, Move.Left)) {
+    return false;
+  }
   return true;
 }
 
@@ -137,6 +209,9 @@ function canMoveRight(snake: Snake, board: Board): boolean {
     return false;
   }
   if (willCollideWithSelf(snake, Move.Right)) {
+    return false;
+  }
+  if (willCollideWithOthers(snake, board, Move.Right)) {
     return false;
   }
   return true;
