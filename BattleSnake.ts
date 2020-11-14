@@ -52,14 +52,72 @@ export function getSafeMovements(snake: Snake, board: Board): Move[] {
   if (canMoveLeft(snake, board)) moves.push(Move.Left);
   if (canMoveRight(snake, board)) moves.push(Move.Right);
 
-  console.log({
-    up: canMoveUp(snake, board),
-    down: canMoveDown(snake, board),
-    left: canMoveLeft(snake, board),
-    right: canMoveRight(snake, board),
+  // console.log({
+  //   up: canMoveUp(snake, board),
+  //   down: canMoveDown(snake, board),
+  //   left: canMoveLeft(snake, board),
+  //   right: canMoveRight(snake, board),
+  // });
+
+  return moves.filter((m) => !willDeadlock(snake, board, m));
+}
+
+// TODO: Remove, this is only for testing
+function randomMove(moves: Move[]): Move {
+  return moves[Math.floor(Math.random() * moves.length)];
+}
+
+export function getPreferredMovement(
+  snake: Snake,
+  board: Board,
+  allowed: Move[],
+): Move {
+  const moveWeights = allowed.map((move) => {
+    return {
+      move: move,
+      weight: getWeight(snake, board, move),
+    };
   });
 
-  return moves;
+  const sorted = moveWeights.sort((a, b) => {
+    if (a.weight > b.weight) {
+      return -1;
+    } else if (a.weight < b.weight) {
+      return 1;
+    } else {
+      return 0;
+    }
+  });
+
+  if (sorted[0].weight === 0) {
+    return randomMove(allowed);
+  }
+
+  return sorted[0].move;
+}
+
+function getWeight(snake: Snake, board: Board, move: Move) {
+  let weight = 0;
+  // TODO: Shortest path to the food furthest from everyone
+  const simulatedHeadPosition = simulatePosition(snake, move);
+  const foodInPosition = board.food.find((p) =>
+    p.x === simulatedHeadPosition.x && p.y === simulatedHeadPosition.y
+  );
+
+  const food = board.food[0];
+
+  console.log(
+    distanceTo(simulatedHeadPosition, food) < distanceTo(snake.head, food),
+  );
+  if (distanceTo(simulatedHeadPosition, food) < distanceTo(snake.head, food)) {
+    weight += distanceTo(snake.head, food);
+  }
+
+  if (foodInPosition) {
+    weight += 100;
+  }
+
+  return weight;
 }
 
 function simulatePosition(snake: Snake, move: Move): Position {
@@ -155,7 +213,7 @@ function destinationIsContested(
   );
 
   for (const head of otherHeadPositions) {
-    console.log("distance", distanceTo(head, foodInPosition));
+    // console.log("distance", distanceTo(head, foodInPosition));
     if (distanceTo(head, foodInPosition) === 1) {
       //! If an opponents snake's head is one away as well, the food is contested
       return true;
@@ -163,6 +221,20 @@ function destinationIsContested(
   }
 
   return false;
+}
+
+function willDeadlock(snake: Snake, board: Board, move: Move): boolean {
+  const simulatedPosition = simulatePosition(snake, move);
+  const movedSnake: Snake = JSON.parse(JSON.stringify(snake));
+  movedSnake.head = simulatedPosition;
+  movedSnake.body.pop();
+  movedSnake.body.push(snake.head);
+
+  const willDeadlock =
+    !(canMoveUp(movedSnake, board) || canMoveDown(movedSnake, board) ||
+      canMoveLeft(movedSnake, board) || canMoveRight(movedSnake, board));
+
+  return willDeadlock;
 }
 
 function canMoveUp(snake: Snake, board: Board): boolean {
@@ -173,6 +245,9 @@ function canMoveUp(snake: Snake, board: Board): boolean {
     return false;
   }
   if (willCollideWithOthers(snake, board, Move.Up)) {
+    return false;
+  }
+  if (destinationIsContested(snake, board, Move.Up)) {
     return false;
   }
   return true;
@@ -188,6 +263,9 @@ function canMoveDown(snake: Snake, board: Board): boolean {
   if (willCollideWithOthers(snake, board, Move.Down)) {
     return false;
   }
+  if (destinationIsContested(snake, board, Move.Down)) {
+    return false;
+  }
   return true;
 }
 
@@ -201,6 +279,9 @@ function canMoveLeft(snake: Snake, board: Board): boolean {
   if (willCollideWithOthers(snake, board, Move.Left)) {
     return false;
   }
+  if (destinationIsContested(snake, board, Move.Left)) {
+    return false;
+  }
   return true;
 }
 
@@ -212,6 +293,9 @@ function canMoveRight(snake: Snake, board: Board): boolean {
     return false;
   }
   if (willCollideWithOthers(snake, board, Move.Right)) {
+    return false;
+  }
+  if (destinationIsContested(snake, board, Move.Right)) {
     return false;
   }
   return true;

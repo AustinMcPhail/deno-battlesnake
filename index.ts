@@ -4,7 +4,12 @@ import {
   Request,
   Router,
 } from "https://deno.land/x/oak/mod.ts";
-import { Game, getSafeMovements, Move } from "./BattleSnake.ts";
+import {
+  Game,
+  getPreferredMovement,
+  getSafeMovements,
+  Move,
+} from "./BattleSnake.ts";
 
 const env = Deno.env.toObject();
 
@@ -60,11 +65,6 @@ const LengthyLarry = new Snake(
   Tail.Pixel,
 );
 
-// TODO: Remove, this is only for testing
-function randomMove(moves: Move[]): Move {
-  return moves[Math.floor(Math.random() * moves.length)];
-}
-
 // deno-lint-ignore no-explicit-any
 async function getBody(req: Request): Promise<any> {
   const result = req.body({
@@ -100,7 +100,9 @@ const handleMove = async (ctx: Context) => {
 
   console.log("Turn: ", game.turn);
   const allowed = getSafeMovements(game.you, game.board);
-  const move = randomMove(allowed);
+  const move = getPreferredMovement(game.you, game.board, allowed);
+
+  console.log("move", move);
 
   res.status = 200;
   res.body = {
@@ -113,7 +115,7 @@ const handleEnd = async (ctx: Context) => {
   const { request: req, response: res } = ctx;
   const body = await getBody(req);
 
-  console.log("ENDING", body);
+  console.log("ENDING");
 
   res.status = 200;
 };
