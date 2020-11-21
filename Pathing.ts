@@ -79,31 +79,6 @@ export const findPath = (game: Game): IPosition[] => {
     // console.log("CURRENT", current);
     const neighbours = getNeighbors(current.item, game, pq, path);
 
-    // if (!neighbours.length) {
-    //   console.log("NO NEIGHBORS");
-    //   if (current.item.x === end.x && current.item.y === end.y) {
-    //     // ! The food is deadlocked. If I get it, i die. The goal needs to be recalculated
-    //     if (goals.length) {
-    //       if (path.length) {
-    //         end = findClosestGoal(path[path.length - 1], goals);
-    //       } else {
-    //         end = findClosestGoal(start, goals);
-    //       }
-    //     } else {
-    //       // There are no more options, choose a random safe spot on the board as the next end
-    //       console.log("FINDING A SAFE PLACE");
-    //       let safeSpot;
-    //       while (safeSpot?.x != end.x && safeSpot?.y !== end.y) {
-    //         safeSpot = getSafeSpot(game);
-    //       }
-    //       end = safeSpot;
-    //     }
-    //   } else {
-    //     path.push(current.item);
-    //   }
-    // } else {
-    //   path.push(current.item);
-    // }
     path.push(current.item);
     if (current.item.x === end.x && current.item.y === end.y) {
       // ! Done

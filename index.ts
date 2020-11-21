@@ -105,13 +105,22 @@ const handleMove = async (ctx: Context) => {
     const path = findPath(game);
     console.log("PATH", path);
     if (path.length) {
-      const move = relativeMove(game.you.head, path[1]);
-      console.log("relative move", move);
-      res.status = 200;
-      res.body = {
-        move: move,
-        shout: move ? "" : "Shiiiiiiiiiiiii-",
-      };
+      const destination = path[1];
+      if (destination) {
+        const move = relativeMove(game.you.head, destination);
+        console.log("relative move", move);
+        res.status = 200;
+        res.body = {
+          move: move,
+          shout: move ? "" : "Shiiiiiiiiiiiii-",
+        };
+      } else {
+        res.status = 200;
+        res.body = {
+          move: "up",
+          shout: "Shiiiiiiiiiiiii-",
+        };
+      }
     }
   } catch (e) {
     console.error(e);
