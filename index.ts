@@ -4,15 +4,7 @@ import {
   Request,
   Router,
 } from "https://deno.land/x/oak/mod.ts";
-import {
-  Game,
-  getPreferredMovement,
-  getSafeMovements,
-  Move,
-  Position,
-} from "./BattleSnake.ts";
-import { findPath, relativeMove } from "./Pathing.ts";
-import { aStar } from "./SwarmAlgorithm.ts";
+import { findPath, Game, relativeMove } from "./Pathing.ts";
 const env = Deno.env.toObject();
 
 const enum Head {

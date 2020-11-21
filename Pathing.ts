@@ -1,5 +1,49 @@
-import { Board, Game, IPosition, Move } from "./BattleSnake.ts";
 import { PriorityQueue } from "./PriQueue.ts";
+
+interface RuleSet {
+  name: string;
+  version: string;
+}
+
+export interface Snake {
+  id: string;
+  name: string;
+  latency: string;
+  health: number;
+  body: IPosition[];
+  head: IPosition;
+  length: number;
+  shout: string;
+}
+
+export enum Move {
+  Up = "up",
+  Down = "down",
+  Left = "left",
+  Right = "right",
+}
+export interface IPosition {
+  x: number;
+  y: number;
+}
+export interface Board {
+  height: number;
+  width: number;
+  snakes: Snake[];
+  food: IPosition[];
+  hazards: IPosition[];
+}
+
+export interface Game {
+  game: {
+    id: string;
+    ruleset: RuleSet;
+    timeout: number;
+  };
+  turn: number;
+  board: Board;
+  you: Snake;
+}
 
 function findClosestGoal(pos: IPosition, goals: IPosition[]) {
   let shortest = Infinity;
