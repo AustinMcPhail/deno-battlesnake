@@ -9,8 +9,10 @@ import {
   getPreferredMovement,
   getSafeMovements,
   Move,
+  Position,
 } from "./BattleSnake.ts";
-
+import { findPath, relativeMove } from "./Pathing.ts";
+import { aStar } from "./SwarmAlgorithm.ts";
 const env = Deno.env.toObject();
 
 const enum Head {
@@ -99,16 +101,21 @@ const handleMove = async (ctx: Context) => {
   const game: Game = await getBody(req);
 
   console.log("Turn: ", game.turn);
-  const allowed = getSafeMovements(game.you, game.board);
-  const move = getPreferredMovement(game.you, game.board, allowed);
-
-  console.log("move", move);
-
-  res.status = 200;
-  res.body = {
-    move: move,
-    shout: move ? "" : "Shiiiiiiiiiiiii-",
-  };
+  try {
+    const path = findPath(game);
+    console.log("PATH", path);
+    if (path.length) {
+      const move = relativeMove(game.you.head, path[1]);
+      console.log("relative move", move);
+      res.status = 200;
+      res.body = {
+        move: move,
+        shout: move ? "" : "Shiiiiiiiiiiiii-",
+      };
+    }
+  } catch (e) {
+    console.error(e);
+  }
 };
 
 const handleEnd = async (ctx: Context) => {

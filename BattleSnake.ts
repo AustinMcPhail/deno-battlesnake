@@ -3,6 +3,7 @@ export enum Move {
   Down = "down",
   Left = "left",
   Right = "right",
+  Forward = "forward",
 }
 
 interface RuleSet {
@@ -10,28 +11,101 @@ interface RuleSet {
   version: string;
 }
 
-interface Snake {
+export interface Snake {
   id: string;
   name: string;
   latency: string;
   health: number;
-  body: Position[];
-  head: Position;
+  body: IPosition[];
+  head: IPosition;
   length: number;
   shout: string;
 }
 
-interface Position {
+export interface IPosition {
   x: number;
   y: number;
 }
 
-interface Board {
+export class Position implements IPosition {
+  x: number;
+  y: number;
+
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  public get key(): string {
+    return `${this.y}:${this.x}`;
+  }
+
+  public equals(pos: IPosition): boolean {
+    return pos.x === this.x && pos.y === this.y;
+  }
+
+  public neighbours(
+    board: Board,
+  ): { dir: Move; pos: Position }[] {
+    const neighbours = [];
+    const snakes = board.snakes.map((s) => [s.head, ...s.body]).flat();
+
+    if (this.x !== 0) {
+      const p = new Position(this.x - 1, this.y);
+      if (!snakes.find((s) => p.equals(s))) {
+        neighbours.push({
+          dir: Move.Left,
+          pos: p,
+        });
+      }
+    }
+
+    if (this.x !== board.width - 1) {
+      const p = new Position(this.x + 1, this.y);
+      if (
+        !snakes.find((s) => p.equals(s))
+      ) {
+        neighbours.push({
+          dir: Move.Right,
+          pos: p,
+        });
+      }
+    }
+
+    if (this.y !== 0) {
+      const p = new Position(this.x, this.y - 1);
+      if (
+        !snakes.find((s) => p.equals(s))
+      ) {
+        neighbours.push({
+          dir: Move.Down,
+          pos: p,
+        });
+      }
+    }
+
+    if (this.y !== board.height - 1) {
+      const p = new Position(this.x, this.y + 1);
+      if (
+        !snakes.find((s) => p.equals(s))
+      ) {
+        neighbours.push({
+          dir: Move.Up,
+          pos: p,
+        });
+      }
+    }
+
+    return neighbours;
+  }
+}
+
+export interface Board {
   height: number;
   width: number;
   snakes: Snake[];
-  food: Position[];
-  hazards: Position[];
+  food: IPosition[];
+  hazards: IPosition[];
 }
 
 export interface Game {
@@ -106,9 +180,6 @@ function getWeight(snake: Snake, board: Board, move: Move) {
 
   const food = board.food[0];
 
-  console.log(
-    distanceTo(simulatedHeadPosition, food) < distanceTo(snake.head, food),
-  );
   if (distanceTo(simulatedHeadPosition, food) < distanceTo(snake.head, food)) {
     weight += distanceTo(snake.head, food);
   }
@@ -120,24 +191,19 @@ function getWeight(snake: Snake, board: Board, move: Move) {
   return weight;
 }
 
-function simulatePosition(snake: Snake, move: Move): Position {
-  let simulatedHeadPosition: Position;
-
+function simulatePosition(snake: Snake, move: Move): IPosition {
   switch (move) {
     case Move.Up:
-      simulatedHeadPosition = { x: snake.head.x, y: snake.head.y + 1 };
-      break;
+      return new Position(snake.head.x, snake.head.y + 1);
     case Move.Down:
-      simulatedHeadPosition = { x: snake.head.x, y: snake.head.y - 1 };
-      break;
+      return new Position(snake.head.x, snake.head.y - 1);
     case Move.Left:
-      simulatedHeadPosition = { x: snake.head.x - 1, y: snake.head.y };
-      break;
+      return new Position(snake.head.x - 1, snake.head.y);
     case Move.Right:
-      simulatedHeadPosition = { x: snake.head.x + 1, y: snake.head.y };
-      break;
+      return new Position(snake.head.x + 1, snake.head.y);
+    default:
+      return new Position(snake.head.x, snake.head.y);
   }
-  return simulatedHeadPosition;
 }
 
 function willCollideWithSelf(snake: Snake, move: Move): boolean {
@@ -182,7 +248,7 @@ function willCollideWithOthers(
   return false;
 }
 
-function distanceTo(pos1: Position, pos2: Position): number {
+function distanceTo(pos1: IPosition, pos2: IPosition): number {
   const x2 = Math.pow((pos2.x - pos1.x), 2);
   const y2 = Math.pow((pos2.x - pos1.x), 2);
   return Math.sqrt(x2 + y2);
@@ -206,7 +272,7 @@ function destinationIsContested(
   );
 
   for (const head of otherHeadPositions) {
-    if (distanceTo(head, simulatedHeadPosition) === 1) {
+    if (distanceTo(head, simulatedHeadPosition) <= 1) {
       //! If an opponents snake's head is one away from this pos as well, the position is contested
       return true;
     }
